@@ -22,3 +22,11 @@ layers =
     (verticals)
     (modules)
     (platform)
+
+[importlinter:contract:platform-is-cross-cutting]
+name = The platform layer must not depend on the application entrypoint
+type = forbidden
+source_modules =
+    vsa_api.platform
+forbidden_modules =
+    vsa_api.main

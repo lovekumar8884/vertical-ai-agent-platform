@@ -10,10 +10,15 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from vsa_api.config import Settings, get_settings
+from vsa_api.platform.telemetry.logging import configure_logging
+from vsa_api.platform.telemetry.sentry import init_sentry
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
+
+    configure_logging(settings.log_level)
+    init_sentry(settings.sentry_dsn_api, settings.env)
 
     app = FastAPI(
         title="Vertical AI Agent Platform API",
