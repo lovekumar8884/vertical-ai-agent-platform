@@ -142,14 +142,15 @@ async def lazy_upsert_principal(
     org_slug: str | None,
     org_name: str | None,
     org_role: str | None,
-) -> User:
+) -> tuple[User, Org | None]:
     """Materialize the user (and current org membership) on first authenticated call."""
     user = await _upsert_user(session, clerk_user_id=clerk_user_id, email=email, name=None)
+    org: Org | None = None
     if org_slug:
         org = await _upsert_org(session, slug=org_slug, name=org_name or org_slug)
         role = "owner" if org_role and "admin" in org_role else "member"
         await _upsert_membership(session, org_id=org.id, user_id=user.id, role=role)
-    return user
+    return user, org
 
 
 async def load_me(session: AsyncSession, *, clerk_user_id: str) -> MeResponse:

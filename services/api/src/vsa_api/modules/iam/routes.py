@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import select, text
 
 from vsa_api.config import get_settings
+from vsa_api.modules.agents.service import ensure_demo_agent
 from vsa_api.modules.iam import service
 from vsa_api.modules.iam.models import Membership, User
 from vsa_api.modules.iam.schemas import MemberOut, MeResponse, UserOut
@@ -45,7 +46,7 @@ async def me(
     principal: Annotated[Principal, Depends(require_principal)],
 ) -> MeResponse:
     async with get_sessionmaker()() as session, session.begin():
-        await service.lazy_upsert_principal(
+        _, org = await service.lazy_upsert_principal(
             session,
             clerk_user_id=principal.user_id,
             email=principal.claims.get("email", ""),
@@ -53,6 +54,8 @@ async def me(
             org_name=principal.claims.get("org_name"),
             org_role=principal.org_role,
         )
+        if org is not None:
+            await ensure_demo_agent(session, org_id=org.id)
         return await service.load_me(session, clerk_user_id=principal.user_id)
 
 
