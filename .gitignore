@@ -30,6 +30,8 @@ node_modules/
 .next/
 out/
 .turbo/
+next-env.d.ts
+*.tsbuildinfo
 
 # Build / deps
 dist/

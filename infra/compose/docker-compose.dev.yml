@@ -1,0 +1,19 @@
+# Developer overrides layered on docker-compose.yml.
+#
+# Publishes host ports so the localhost URLs in .env.example resolve:
+#   Postgres  -> localhost:5432   (VSA_DB_URL)
+#   Redis     -> localhost:6379   (VSA_REDIS_SESSION_URL db 0, VSA_REDIS_CACHE_URL db 1)
+#   Mailpit   -> localhost:1025   (SMTP)  /  localhost:8025 (web UI)
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  mailpit:
+    ports:
+      - "1025:1025"
+      - "8025:8025"
