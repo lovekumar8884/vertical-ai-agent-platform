@@ -23,6 +23,12 @@ class MembershipOut(BaseModel):
     org: OrgOut
 
 
+class MemberOut(BaseModel):
+    id: str
+    role: str
+    user: UserOut
+
+
 class MeResponse(BaseModel):
     user: UserOut
     memberships: list[MembershipOut]

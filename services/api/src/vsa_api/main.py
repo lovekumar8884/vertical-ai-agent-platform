@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from vsa_api.config import Settings, get_settings
+from vsa_api.modules.iam.routes import router as iam_router
 from vsa_api.platform.cache.redis import get_cache_redis, get_session_redis
 from vsa_api.platform.db.engine import get_engine
 from vsa_api.platform.errors import register_error_handlers
@@ -76,6 +77,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         response.status_code = 200 if ready else 503
         return {"status": "ready" if ready else "not_ready", "checks": checks}
+
+    app.include_router(iam_router)
 
     return app
 
