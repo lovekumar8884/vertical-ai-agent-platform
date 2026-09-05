@@ -1,0 +1,21 @@
+# Virtual uv workspace root. The root is not a package; members live under services/*.
+[tool.uv.workspace]
+members = ["services/*"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["services"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "ASYNC", "S", "PTH", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101"]      # asserts are expected in tests
+"**/migrations/**" = ["E501"] # generated migration bodies may be long
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
