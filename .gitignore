@@ -10,16 +10,31 @@ Thumbs.db
 # Env / secrets
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 
-# Build / deps
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Next.js
 node_modules/
+.next/
+out/
+.turbo/
+
+# Build / deps
 dist/
 build/
 target/
-__pycache__/
-*.pyc
 
 # Logs
 *.log
