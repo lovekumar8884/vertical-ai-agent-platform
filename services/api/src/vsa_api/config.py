@@ -46,6 +46,7 @@ class Settings(BaseSettings):
 
     # App URLs
     api_base_url: str = "http://localhost:8000"
+    cors_allow_origins: list[str] = ["http://localhost:3000"]
 
     # Clerk (identity + membership authoritative). No VSA_ prefix in the env.
     clerk_secret_key: SecretStr = Field(default=SecretStr(""), validation_alias="CLERK_SECRET_KEY")
