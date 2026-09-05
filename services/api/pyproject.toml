@@ -1,13 +1,20 @@
 [project]
 name = "vsa-api"
 version = "0.1.0"
-description = "Vertical AI Agent Platform API monolith. Placeholder manifest; runtime dependencies land in D3."
+description = "Vertical AI Agent Platform API monolith."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic-settings>=2.6",
+]
 
 [dependency-groups]
 dev = [
     "import-linter>=2.0",
+    "httpx>=0.27",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
 ]
 
 [build-system]
