@@ -53,6 +53,8 @@ class Settings(BaseSettings):
     clerk_webhook_signing_secret: SecretStr = Field(
         default=SecretStr(""), validation_alias="CLERK_WEBHOOK_SIGNING_SECRET"
     )
+    clerk_jwks_url: str = Field(default="", validation_alias="CLERK_JWKS_URL")
+    clerk_issuer: str = Field(default="", validation_alias="CLERK_ISSUER")
 
 
 @lru_cache
