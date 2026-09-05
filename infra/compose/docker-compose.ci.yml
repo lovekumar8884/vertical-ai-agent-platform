@@ -1,0 +1,20 @@
+# CI overrides layered on docker-compose.yml.
+#
+# Publishes ports so the runner reaches services on localhost, and trades
+# Postgres durability for speed (safe: CI databases are ephemeral).
+services:
+  postgres:
+    command:
+      - postgres
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"

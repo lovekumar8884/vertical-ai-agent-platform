@@ -1,5 +1,8 @@
 .DEFAULT_GOAL := help
-.PHONY: help install dev dev-infra dev-api dev-console down lint fmt typecheck test migrate migrate-down
+.PHONY: help install dev dev-infra dev-api dev-console db-up db-down down lint fmt typecheck test migrate migrate-down
+
+# Local dev stack = base compose + developer host-port overrides.
+COMPOSE_DEV := docker compose -f docker-compose.yml -f infra/compose/docker-compose.dev.yml
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-14s %s\n", $$1, $$2}'
@@ -9,7 +12,13 @@ install: ## Install Python (uv) and Node (pnpm) dependencies
 	pnpm install
 
 dev-infra: ## Start backing services (Postgres, Redis, Mailpit)
-	docker compose up -d
+	$(COMPOSE_DEV) up -d --wait
+
+db-up: ## Start Postgres + Redis and wait until healthy
+	$(COMPOSE_DEV) up -d --wait postgres redis
+
+db-down: ## Stop backing services and remove their volumes
+	$(COMPOSE_DEV) down -v
 
 dev-api: ## Run the FastAPI app with hot reload
 	cd services/api && uv run uvicorn vsa_api.main:app --reload --port 8000
@@ -23,7 +32,7 @@ dev: dev-infra ## Start infra, then instruct how to run api + console
 	@echo "  make dev-console"
 
 down: ## Stop backing services
-	docker compose down
+	$(COMPOSE_DEV) down
 
 lint: ## Lint Python and TypeScript
 	uv run ruff check services
