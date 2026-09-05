@@ -1,0 +1,46 @@
+# Local dev stack for the Vertical AI Agent Platform.
+#
+# This base file is portable: it defines services, healthchecks and named
+# volumes but publishes no host ports, so it can also seed the CI stack.
+# Developer host-port mappings live in infra/compose/docker-compose.dev.yml
+# and are layered on by the `make dev` / `make db-up` targets.
+name: verticalsasai
+
+services:
+  postgres:
+    # Exact pin — pgvector ships as a rolling tag, so lock it.
+    image: pgvector/pgvector:0.8.0-pg16
+    environment:
+      POSTGRES_USER: vsa
+      POSTGRES_PASSWORD: vsa
+      POSTGRES_DB: vsa
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vsa -d vsa"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # One Redis container exposing two logical DBs — db 0 = session, db 1 = cache —
+  # mirroring the Upstash split without running two containers.
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.20
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
