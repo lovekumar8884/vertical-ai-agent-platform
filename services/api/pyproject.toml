@@ -1,0 +1,18 @@
+[project]
+name = "vsa-api"
+version = "0.1.0"
+description = "Vertical AI Agent Platform API monolith. Placeholder manifest; runtime dependencies land in D3."
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "import-linter>=2.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vsa_api"]

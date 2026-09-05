@@ -1,0 +1,10 @@
+{
+  "name": "@vsa/console",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "echo \"console: lint wired in D4\"",
+    "typecheck": "echo \"console: typecheck wired in D4\"",
+    "test": "echo \"console: tests wired in D4\""
+  }
+}

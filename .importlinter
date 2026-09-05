@@ -1,0 +1,24 @@
+# import-linter — module boundary contracts for the API monolith.
+#
+# The monolith is written as if it were already six services: every top-level
+# package under `vsa_api` is a candidate for future extraction. These contracts
+# make the boundaries executable so drift is caught in CI, not in review.
+#
+# Layers wrapped in parentheses are OPTIONAL: a package that does not exist yet
+# is skipped. This lets the boundaries be declared before the code lands; later
+# deliverables tighten them (platform-layer contract in D3, runtime module
+# contract in D5).
+
+[importlinter]
+root_package = vsa_api
+
+[importlinter:contract:architectural-layers]
+name = Platform is the foundation; modules build on it; verticals and workers sit on top
+type = layers
+containers =
+    vsa_api
+layers =
+    (workers)
+    (verticals)
+    (modules)
+    (platform)
