@@ -31,6 +31,26 @@ Customer Support · Sales SDR · Restaurant Ordering · Medical Reception · Rea
 
 ---
 
+## Local Development
+
+**Prerequisites:** Python 3.12, Node 22, [uv](https://docs.astral.sh/uv/), [pnpm](https://pnpm.io/) 9, Docker (for Postgres/Redis/Mailpit), and GNU Make (optional convenience wrapper).
+
+```bash
+git clone https://github.com/lovekumar8884/vertical-ai-agent-platform.git
+cd vertical-ai-agent-platform
+cp .env.example .env        # then fill in the required keys
+make install                # uv sync + pnpm install
+make dev                    # start Postgres, Redis, Mailpit
+make dev-api                # (separate terminal) FastAPI on :8000
+make dev-console            # (separate terminal) Next.js on :3000
+```
+
+Without Make, run the underlying commands directly (`docker compose up -d`, `uv run uvicorn ...`, `pnpm dev`). See the [Makefile](Makefile) for the full target list (`make help`).
+
+The Sprint 1 goal: sign up → organization → Demo Agent → Test Chat → streamed `gpt-4o-mini` response → history. Scope is frozen in [ARCHITECTURE_FREEZE_V1.md](ARCHITECTURE_FREEZE_V1.md) and [SPRINT1_FINAL_SCOPE.md](SPRINT1_FINAL_SCOPE.md).
+
+---
+
 ## Documentation Map
 
 Read in this order:
