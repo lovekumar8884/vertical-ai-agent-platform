@@ -7,10 +7,13 @@ probes that Fly.io and the compose healthchecks call.
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from vsa_api.config import Settings, get_settings
+from vsa_api.platform.cache.redis import get_cache_redis, get_session_redis
+from vsa_api.platform.db.engine import get_engine
 from vsa_api.platform.errors import register_error_handlers
 from vsa_api.platform.middleware import request_id_middleware
 from vsa_api.platform.telemetry.logging import configure_logging
@@ -47,9 +50,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok"}
 
     @app.get("/readyz", tags=["health"])
-    async def readyz() -> dict[str, str]:
-        """Readiness: dependency checks (DB + Redis) are wired in a later commit."""
-        return {"status": "ready"}
+    async def readyz(response: Response) -> dict[str, object]:
+        """Readiness: 200 only when Postgres and both Redis DBs are reachable."""
+        checks: dict[str, str] = {}
+        ready = True
+
+        try:
+            async with get_engine().connect() as conn:
+                await conn.execute(text("SELECT 1"))
+            checks["db"] = "ok"
+        except Exception:
+            checks["db"] = "error"
+            ready = False
+
+        for name, client in (
+            ("redis_session", get_session_redis()),
+            ("redis_cache", get_cache_redis()),
+        ):
+            try:
+                await client.ping()
+                checks[name] = "ok"
+            except Exception:
+                checks[name] = "error"
+                ready = False
+
+        response.status_code = 200 if ready else 503
+        return {"status": "ready" if ready else "not_ready", "checks": checks}
 
     return app
 
