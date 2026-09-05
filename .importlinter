@@ -30,3 +30,12 @@ source_modules =
     vsa_api.platform
 forbidden_modules =
     vsa_api.main
+
+[importlinter:contract:runtime-ports-are-the-seam]
+name = The runtime port must not depend on the runtime's private implementation
+type = forbidden
+source_modules =
+    vsa_api.modules.runtime.ports
+forbidden_modules =
+    vsa_api.modules.runtime.prompt
+    vsa_api.modules.runtime.llm
