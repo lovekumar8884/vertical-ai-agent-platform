@@ -45,10 +45,12 @@ def fake_redis(monkeypatch):
     """Real Redis is deferred; share one fakeredis so idempotency/concurrency
     state persists across requests within a test."""
     from fakeredis import FakeAsyncRedis
+    from vsa_api.modules.agents import routes as agents_routes
     from vsa_api.modules.sessions import routes as sessions_routes
 
     client = FakeAsyncRedis()
     monkeypatch.setattr(sessions_routes, "get_cache_redis", lambda: client)
+    monkeypatch.setattr(agents_routes, "get_cache_redis", lambda: client)
     return client
 
 
