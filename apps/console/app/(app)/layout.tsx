@@ -1,10 +1,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+// Authenticated app segment: rendered per-request (Clerk session required).
+export const dynamic = "force-dynamic";
+
 const NAV = [
   { href: "/agents", label: "Agents" },
   { href: "/conversations", label: "Conversations" },
-  { href: "/settings", label: "Settings" },
+  { href: "/settings/members", label: "Members" },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {

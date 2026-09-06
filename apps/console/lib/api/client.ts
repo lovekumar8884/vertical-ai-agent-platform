@@ -1,6 +1,6 @@
 import type { HealthStatus, Problem, ReadyStatus } from "./types";
 
-const BASE_URL =
+export const API_BASE_URL =
   process.env.NEXT_PUBLIC_VSA_API_BASE_URL ?? "http://localhost:8000";
 
 /** Thrown for non-2xx responses; carries the Problem+JSON body when present. */
@@ -21,19 +21,25 @@ export interface RequestOptions {
   body?: unknown;
   signal?: AbortSignal;
   headers?: Record<string, string>;
+  /** Clerk session JWT for authenticated requests. */
+  token?: string | null;
 }
 
 export async function apiFetch<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = "GET", body, signal, headers = {} } = options;
+  const { method = "GET", body, signal, headers = {}, token } = options;
 
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
     signal,
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
