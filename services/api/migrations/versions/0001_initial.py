@@ -4,13 +4,14 @@ Revision ID: 0001_initial
 Revises:
 Create Date: 2026-09-05
 
-NOTE ON PARTITIONING: SPRINT1_FINAL_SCOPE declares session/turn/audit_log
-``PARTITION BY RANGE (created_at)``. Postgres cannot enforce a foreign key that
-references a partitioned table on a non-partition-key column (e.g.
-``turn.session_id -> session.id``), and a partitioned table's primary key must
-include the partition key. To keep referential integrity intact at MVP volume,
-these tables are created non-partitioned here; monthly RANGE partitioning is a
-follow-up migration to add once volume warrants and the FK strategy is settled.
+NOTE ON PARTITIONING (decision: Option A): SPRINT1_FINAL_SCOPE declares
+session/turn/audit_log ``PARTITION BY RANGE (created_at)``. Postgres cannot
+enforce a foreign key referencing a partitioned table on a non-partition-key
+column, so ``turn.session_id -> session.id`` forces ``session`` (and therefore
+``turn``) to stay non-partitioned to preserve referential integrity.
+``audit_log`` has no incoming FK, so it IS range-partitioned by ``created_at``
+here (composite PK ``id, created_at``) with monthly partitions for the current
+and next two months plus a DEFAULT catch-all.
 """
 
 from __future__ import annotations
@@ -168,9 +169,9 @@ def upgrade() -> None:
     op.execute("CREATE INDEX ix_turn_session_id ON turn(session_id)")
 
     op.execute(
-        f"""
+        """
         CREATE TABLE audit_log (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id UUID NOT NULL DEFAULT gen_random_uuid(),
             org_id UUID NOT NULL REFERENCES org(id) ON DELETE CASCADE,
             actor_user_id UUID,
             action TEXT NOT NULL,
@@ -179,10 +180,27 @@ def upgrade() -> None:
             diff JSONB,
             ip TEXT,
             ua TEXT,
-            {_TIMESTAMPS}
-        )
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            deleted_at TIMESTAMPTZ,
+            PRIMARY KEY (id, created_at)
+        ) PARTITION BY RANGE (created_at)
         """
     )
+    # Monthly partitions for the current + next two months, plus a DEFAULT.
+    op.execute(
+        "CREATE TABLE audit_log_2026_09 PARTITION OF audit_log "
+        "FOR VALUES FROM ('2026-09-01') TO ('2026-10-01')"
+    )
+    op.execute(
+        "CREATE TABLE audit_log_2026_10 PARTITION OF audit_log "
+        "FOR VALUES FROM ('2026-10-01') TO ('2026-11-01')"
+    )
+    op.execute(
+        "CREATE TABLE audit_log_2026_11 PARTITION OF audit_log "
+        "FOR VALUES FROM ('2026-11-01') TO ('2026-12-01')"
+    )
+    op.execute("CREATE TABLE audit_log_default PARTITION OF audit_log DEFAULT")
     op.execute("CREATE INDEX ix_audit_log_org_created ON audit_log(org_id, created_at DESC)")
 
     # chunk exists for schema completeness; not populated in Sprint 1.
@@ -208,10 +226,12 @@ def upgrade() -> None:
     for table in _TENANT_TABLES:
         op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
         op.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY")
+        # NULLIF maps an unset/empty app.org_id to NULL so an unscoped session
+        # sees no rows (and cannot insert) instead of erroring on ''::uuid.
         op.execute(
             f"CREATE POLICY {table}_isolation ON {table} "
-            "USING (org_id = current_setting('app.org_id', true)::uuid) "
-            "WITH CHECK (org_id = current_setting('app.org_id', true)::uuid)"
+            "USING (org_id = NULLIF(current_setting('app.org_id', true), '')::uuid) "
+            "WITH CHECK (org_id = NULLIF(current_setting('app.org_id', true), '')::uuid)"
         )
 
 
