@@ -6,13 +6,16 @@ optional org context) that route handlers depend on.
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 from typing import Annotated, Any
 
-from fastapi import Header
+from fastapi import Depends, Header
+from sqlalchemy import text
 
 from vsa_api.platform.auth.clerk import AuthError, verify_token
-from vsa_api.platform.errors import DomainError
+from vsa_api.platform.db.engine import get_sessionmaker
+from vsa_api.platform.errors import DomainError, ForbiddenError
 
 
 class UnauthorizedError(DomainError):
@@ -46,3 +49,18 @@ async def require_principal(
         org_role=claims.get("org_role"),
         claims=claims,
     )
+
+
+async def require_org_id(
+    principal: Annotated[Principal, Depends(require_principal)],
+) -> uuid.UUID:
+    """Resolve the caller's active org to our internal UUID (raw SQL keeps
+    platform free of any modules import)."""
+    slug = principal.claims.get("org_slug")
+    if not slug:
+        raise ForbiddenError("No active organization in the session token.")
+    async with get_sessionmaker()() as session:
+        org_id = await session.scalar(text("SELECT id FROM org WHERE slug = :slug"), {"slug": slug})
+    if org_id is None:
+        raise ForbiddenError("Organization is not provisioned yet; call /v1/me first.")
+    return org_id
