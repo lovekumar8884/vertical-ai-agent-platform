@@ -43,6 +43,11 @@ class ConflictError(DomainError):
     title = "Conflict"
 
 
+class TooManyRequestsError(DomainError):
+    status_code = 429
+    title = "Too Many Requests"
+
+
 def _problem(
     *,
     status_code: int,

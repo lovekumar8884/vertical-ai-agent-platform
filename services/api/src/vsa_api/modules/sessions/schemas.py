@@ -9,6 +9,10 @@ class SessionCreate(BaseModel):
     agent_id: str
 
 
+class MessageCreate(BaseModel):
+    content: str
+
+
 class SessionOut(BaseModel):
     id: str
     agent_id: str

@@ -53,3 +53,8 @@ async def stream_chat(
                 yield delta
     except Exception as exc:
         raise LLMError(str(exc)) from exc
+    finally:
+        # Abort the provider stream on completion OR caller cancellation (aclose).
+        aclose = getattr(stream, "aclose", None)
+        if aclose is not None:
+            await aclose()
