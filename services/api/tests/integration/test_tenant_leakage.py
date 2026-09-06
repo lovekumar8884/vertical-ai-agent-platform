@@ -102,7 +102,11 @@ async def test_org_b_cannot_reach_org_a_data(make_org, org_a_session, rsa_key):
 
         # Creating a session with A's agent -> 409 (agent not visible to B).
         assert (
-            await client.post("/v1/sessions", json={"agent_id": a_agent_id}, headers=b_headers)
+            await client.post(
+                "/v1/sessions",
+                json={"agent_id": a_agent_id},
+                headers={**b_headers, "Idempotency-Key": "leak-attempt"},
+            )
         ).status_code == 409
 
 

@@ -75,7 +75,7 @@ async def test_create_and_read_session(agent, rsa_key):
         created = await client.post(
             "/v1/sessions",
             json={"agent_id": from_uuid(IdType.AGENT, agent_id)},
-            headers=headers,
+            headers={**headers, "Idempotency-Key": "create-1"},
         )
         assert created.status_code == 201, created.text
         session_id = created.json()["id"]

@@ -10,7 +10,7 @@ import uuid
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy import text
 
@@ -31,7 +31,8 @@ from vsa_api.platform.auth.deps import require_org_id
 from vsa_api.platform.cache.redis import get_cache_redis
 from vsa_api.platform.concurrency import AgentConcurrencyLimiter, ConcurrencyLimitError
 from vsa_api.platform.db.session import TenantScopedSession
-from vsa_api.platform.errors import TooManyRequestsError
+from vsa_api.platform.errors import DomainError, TooManyRequestsError
+from vsa_api.platform.idempotency import run_idempotent
 from vsa_api.platform.ids import IdType, from_uuid, to_uuid
 
 router = APIRouter(prefix="/v1/sessions", tags=["sessions"])
@@ -50,10 +51,23 @@ def _to_out(session_row: Session) -> SessionOut:
 async def create_session(
     body: SessionCreate,
     org_id: Annotated[uuid.UUID, Depends(require_org_id)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ) -> SessionOut:
-    async with TenantScopedSession(str(org_id)) as db:
-        row = await service.create_session(db, org_id=org_id, agent_id=to_uuid(body.agent_id))
-        return _to_out(row)
+    if not idempotency_key:
+        raise DomainError("Idempotency-Key header is required.")
+
+    async def produce() -> dict:
+        async with TenantScopedSession(str(org_id)) as db:
+            row = await service.create_session(db, org_id=org_id, agent_id=to_uuid(body.agent_id))
+            return _to_out(row).model_dump()
+
+    result, _replayed = await run_idempotent(
+        get_cache_redis(),
+        org_id=str(org_id),
+        idempotency_key=idempotency_key,
+        produce=produce,
+    )
+    return SessionOut(**result)
 
 
 @router.get("", response_model=list[SessionOut])

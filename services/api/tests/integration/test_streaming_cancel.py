@@ -13,13 +13,11 @@ import jwt
 import pytest
 import pytest_asyncio
 from cryptography.hazmat.primitives.asymmetric import rsa
-from fakeredis import FakeAsyncRedis
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from vsa_api.main import app
 from vsa_api.modules.agents.models import Agent, AgentVersion
 from vsa_api.modules.runtime import llm
-from vsa_api.modules.sessions import routes as sessions_routes
 from vsa_api.modules.sessions.models import Session
 from vsa_api.platform.auth import clerk
 from vsa_api.platform.db.session import TenantScopedSession
@@ -63,7 +61,6 @@ def _stubs(monkeypatch, rsa_key):
             get_signing_key_from_jwt=lambda _t: types.SimpleNamespace(key=public_key)
         ),
     )
-    monkeypatch.setattr(sessions_routes, "get_cache_redis", FakeAsyncRedis)
 
     async def fake_acompletion(**_kwargs):
         return _SlowStream(["Hello", " world", " again"])
